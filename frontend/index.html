@@ -123,19 +123,22 @@
       document.getElementById("active-email").textContent = currentAddress;
       localStorage.setItem("tm_prefix", name); localStorage.setItem("tm_domain", domain);
       try {
-        const res = await fetch(`${API_BASE}/api/new_address`, {
+        const res = await fetch(`/api/new_address`, {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, domain })
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data = {};
+        try { data = JSON.parse(text); } catch (_) { return showToast("状态" + res.status + "：" + text.slice(0, 50)); }
         currentJwt = (data && data.jwt) ? data.jwt : (localStorage.getItem("tm_jwt_" + currentAddress) || "");
         if (currentJwt) {
           localStorage.setItem("tm_jwt_" + currentAddress, currentJwt);
           await fetchMails(false);
           if (timer) clearInterval(timer);
           timer = setInterval(() => fetchMails(false), 5000);
-        } else { showToast(data.message || "邮箱连接失败"); }
-      } catch (e) { showToast("网络连接异常"); }
+        } else { showToast("接口提示：" + (data.message || data.error || text.slice(0, 50))); }
+      } catch (e) { showToast("异常：" + e.message); }
     }
+
     function extractCode(text) {
       if (!text) return null;
       const m = text.match(/(?:code|验证码|代码|FB-|pin)[^\dA-Z]{0,12}(\d{5,8})/i) || text.match(/\b(\d{6,8})\b/);
