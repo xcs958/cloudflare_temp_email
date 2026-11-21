@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>临时收件箱 - 实时接收验证码</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://w3.org' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E%3Cpath d='M6 10a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10zm2.2.2L16 15.5l7.8-5.3H8.2zm15.8 2.3-7.4 5a1 1 0 0 1-1.2 0L8 12.5V22h16v-9.5z' fill='%23ffffff'/%3E%3C/svg%3E" />
+
   <style>
     :root { --primary:#2563eb; --primary-hover:#1d4ed8; --bg:#f8fafc; --card:#fff; --text:#0f172a; --muted:#64748b; --border:#e2e8f0; }
     * { box-sizing:border-box; margin:0; padding:0; }
@@ -96,7 +98,8 @@
   </main>
   <div class="toast" id="toast">已复制</div>
   <script>
-    const API_BASE = "https://" + "api." + "buletide.uk";
+    const API_BASE = "https://" + "cloudflare-temp-email." + "15757592773.workers.dev";
+
     let currentJwt = "", currentAddress = "", timer = null;
     function showToast(msg) {
       const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
