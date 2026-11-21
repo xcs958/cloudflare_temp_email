@@ -1,26 +1,172 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <link rel="icon" href="/logo.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Temp Email</title>
-  <meta name="description" content="Temp Email">
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#000">
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#ffffff">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Temp Email">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="icon" href="/logo.png" sizes="any">
-  <link rel="apple-touch-icon" href="/logo.png">
-  <script id="app-config" type="application/json">{}</script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>临时收件箱 - 实时接收验证码</title>
+  <style>
+    :root { --primary:#2563eb; --primary-hover:#1d4ed8; --bg:#f8fafc; --card:#fff; --text:#0f172a; --muted:#64748b; --border:#e2e8f0; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+    header { background:var(--card); border-bottom:1px solid var(--border); padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; color:var(--primary); }
+    .status-pill { font-size:12px; color:#16a34a; background:#f0fdf4; border:1px solid #bbf7d0; padding:4px 10px; border-radius:999px; display:flex; align-items:center; gap:6px; }
+    .dot { width:7px; height:7px; border-radius:50%; background:#16a34a; }
+    main { max-width:820px; width:100%; margin:36px auto; padding:0 16px; }
+    .hero { text-align:center; margin-bottom:28px; }
+    .hero-tag { display:inline-block; background:#eff6ff; color:var(--primary); font-size:12px; font-weight:600; padding:4px 12px; border-radius:999px; margin-bottom:10px; }
+    .hero h1 { font-size:28px; font-weight:800; margin-bottom:8px; }
+    .hero p { color:var(--muted); font-size:14px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:24px; box-shadow:0 4px 20px rgba(15,23,42,.04); margin-bottom:20px; }
+    .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; font-size:14px; font-weight:600; color:var(--muted); }
+    .input-group { display:flex; align-items:stretch; border:1.5px solid #cbd5e1; border-radius:10px; overflow:hidden; background:#fff; }
+    .input-group:focus-within { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+    .input-group input { flex:1; border:none; outline:none; padding:13px 14px; font-size:16px; font-weight:600; min-width:120px; }
+    .at-sign { display:flex; align-items:center; padding:0 8px; color:var(--muted); font-weight:700; background:#f8fafc; border-left:1px solid var(--border); border-right:1px solid var(--border); }
+    .input-group select { border:none; outline:none; padding:0 14px; font-size:15px; font-weight:600; background:#f8fafc; cursor:pointer; }
+    .btn-primary { background:var(--primary); color:#fff; border:none; padding:0 22px; font-size:15px; font-weight:600; cursor:pointer; white-space:nowrap; }
+    .btn-primary:hover { background:var(--primary-hover); }
+    .actions-bar { display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:10px; }
+    .btn-ghost { background:#f1f5f9; color:#334155; border:1px solid var(--border); padding:7px 13px; border-radius:8px; font-size:13px; cursor:pointer; }
+    .btn-ghost:hover { background:#e2e8f0; }
+    .current-addr { font-size:13px; color:var(--muted); }
+    .current-addr b { color:var(--primary); }
+    .inbox-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+    .inbox-title { font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .count-badge { background:#eff6ff; color:var(--primary); font-size:12px; padding:2px 8px; border-radius:999px; }
+    .empty-state { text-align:center; padding:48px 16px; color:var(--muted); }
+    .mail-item { border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:12px; }
+    .mail-subject { font-weight:700; font-size:15px; }
+    .mail-meta { font-size:12px; color:var(--muted); margin-top:2px; }
+    .code-box { display:inline-flex; align-items:center; gap:8px; background:#eff6ff; border:1px dashed #60a5fa; color:#1d4ed8; padding:6px 12px; border-radius:8px; font-size:16px; font-weight:800; margin:8px 0; cursor:pointer; }
+    .mail-body { margin-top:10px; padding-top:10px; border-top:1px solid #f1f5f9; font-size:14px; line-height:1.6; color:#334155; word-break:break-word; overflow-x:auto; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0f172a; color:#fff; padding:10px 18px; border-radius:8px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:999; }
+    .toast.show { opacity:1; }
+  </style>
 </head>
-
 <body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
+  <header>
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <rect x="2" y="4" width="20" height="16" rx="3"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+      </svg>
+      <span>在线极速收件箱</span>
+    </div>
+    <div class="status-pill"><span class="dot"></span> 实时自动接收中</div>
+  </header>
+  <main>
+    <div class="hero">
+      <span class="hero-tag">实时收信 · 无需注册</span>
+      <h1>临时收信，即时获取验证码</h1>
+      <p>输入邮箱前缀并选择对应后缀，即可实时查看已收到或新发送的验证邮件</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span>设置或输入您的收件邮箱地址</span>
+        <span id="last-sync">等待连接...</span>
+      </div>
+      <div class="input-group">
+        <input type="text" id="prefix" placeholder="输入邮箱前缀（如 abc12345）" autocomplete="off" />
+        <span class="at-sign">@</span>
+        <select id="domain">
+          <option value="buletide.uk">buletide.uk</option>
+          <option value="buletide-hub.co.uk">buletide-hub.co.uk</option>
+          <option value="kestrel-craft.uk">kestrel-craft.uk</option>
+          <option value="verve-studio.uk">verve-studio.uk</option>
+          <option value="solaris-labs.co.uk">solaris-labs.co.uk</option>
+        </select>
+        <button class="btn-primary" onclick="connectMailbox()">确认 / 查收邮件</button>
+      </div>
+      <div class="actions-bar">
+        <div class="current-addr">当前收件箱：<b id="active-email">未设置</b></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-ghost" onclick="copyEmail()">复制完整邮箱</button>
+          <button class="btn-ghost" onclick="randomPrefix()">随机前缀</button>
+          <button class="btn-ghost" onclick="fetchMails(true)">立即刷新</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="inbox-header">
+        <div class="inbox-title">收件箱 <span class="count-badge" id="mail-count">0</span></div>
+        <span style="font-size:12px; color:#64748b;">每 5 秒自动刷新</span>
+      </div>
+      <div id="mail-list"><div class="empty-state">收件箱已就绪，邮件到达后将自动显示在这里</div></div>
+    </div>
+  </main>
+  <div class="toast" id="toast">已复制</div>
+  <script>
+    const API_BASE = "https://" + "api." + "buletide.uk";
+    let currentJwt = "", currentAddress = "", timer = null;
+    function showToast(msg) {
+      const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2000);
+    }
+    function randomStr(len = 9) {
+      const chars = "abcdefghijklmnopqrstuvwxyz0123456789"; let out = "";
+      for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+      return out;
+    }
+    function randomPrefix() { document.getElementById("prefix").value = randomStr(9); connectMailbox(); }
+    function copyText(txt, tip = "已复制") { navigator.clipboard.writeText(txt).then(() => showToast(tip)); }
+    function copyEmail() { if (currentAddress) copyText(currentAddress, "已复制：" + currentAddress); }
+    async function connectMailbox() {
+      const name = document.getElementById("prefix").value.trim().toLowerCase();
+      const domain = document.getElementById("domain").value;
+      if (!name) return showToast("请输入邮箱前缀");
+      currentAddress = `${name}@${domain}`;
+      document.getElementById("active-email").textContent = currentAddress;
+      localStorage.setItem("tm_prefix", name); localStorage.setItem("tm_domain", domain);
+      try {
+        const res = await fetch(`${API_BASE}/api/new_address`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, domain })
+        });
+        const data = await res.json();
+        currentJwt = (data && data.jwt) ? data.jwt : (localStorage.getItem("tm_jwt_" + currentAddress) || "");
+        if (currentJwt) {
+          localStorage.setItem("tm_jwt_" + currentAddress, currentJwt);
+          await fetchMails(false);
+          if (timer) clearInterval(timer);
+          timer = setInterval(() => fetchMails(false), 5000);
+        } else { showToast(data.message || "邮箱连接失败"); }
+      } catch (e) { showToast("网络连接异常"); }
+    }
+    function extractCode(text) {
+      if (!text) return null;
+      const m = text.match(/(?:code|验证码|代码|FB-|pin)[^\dA-Z]{0,12}(\d{5,8})/i) || text.match(/\b(\d{6,8})\b/);
+      return m ? m[1] : null;
+    }
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+    async function fetchMails(manual) {
+      if (!currentJwt) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/mails?limit=20&offset=0`, { headers: { "Authorization": `Bearer ${currentJwt}` } });
+        const data = await res.json(); const list = data.results || [];
+        document.getElementById("mail-count").textContent = list.length;
+        document.getElementById("last-sync").textContent = "上次刷新 " + new Date().toLocaleTimeString();
+        const box = document.getElementById("mail-list");
+        if (!list.length) {
+          box.innerHTML = `<div class="empty-state">收件箱已准备好，邮件到达后将自动显示在这里</div>`;
+          if (manual) showToast("已刷新，暂无新邮件"); return;
+        }
+        box.innerHTML = list.map(item => {
+          const raw = item.raw || ""; const subjM = raw.match(/^Subject:\s*(.+)$/im); const fromM = raw.match(/^From:\s*(.+)$/im);
+          const subject = item.subject || (subjM ? subjM[1].trim() : "(无主题)");
+          const sender = item.source || (fromM ? fromM[1].trim() : "未知发件人");
+          const body = item.text || item.html || raw.split(/\r?\n\r?\n/).slice(1).join("\n");
+          const code = extractCode(subject + " " + body);
+          return `<div class="mail-item"><div class="mail-subject">${escapeHtml(subject)}</div><div class="mail-meta">发件人：${escapeHtml(sender)}</div>${code ? `<div class="code-box" onclick="copyText('${code}','验证码 ${code} 已复制')">验证码：${code}（点击复制）</div>` : ""}<div class="mail-body">${item.html ? item.html : escapeHtml(body).replace(/\n/g,"<br>")}</div></div>`;
+        }).join("");
+        if (manual) showToast("刷新成功，共 " + list.length + " 封邮件");
+      } catch (e) { if (manual) showToast("刷新失败"); }
+    }
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("prefix").value = localStorage.getItem("tm_prefix") || randomStr(9);
+      if (localStorage.getItem("tm_domain")) document.getElementById("domain").value = localStorage.getItem("tm_domain");
+      connectMailbox();
+    });
+  </script>
 </body>
-
 </html>
