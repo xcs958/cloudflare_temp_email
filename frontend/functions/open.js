@@ -1,6 +1,7 @@
 export async function onRequestPost({ request }) {
   const { name, domain } = await request.json();
-  const base = "https://" + "api." + "buletide.uk";
+const base = "https://" + "cloudflare-temp-email." + "15757592773.workers.dev";
+
   const headers = { "Content-Type": "application/json", "x-admin-auth": "xcs729638172" };
   const r1 = await fetch(`${base}/admin/new_address`, {
     method: "POST",
