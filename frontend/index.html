@@ -147,10 +147,18 @@
       return String(s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     }
     async function fetchMails(manual) {
-      if (!currentJwt) return;
+      const name = document.getElementById("prefix").value.trim().toLowerCase();
+      const domain = document.getElementById("domain").value;
+      if (!name) return;
       try {
-        const res = await fetch(`${API_BASE}/api/mails?limit=20&offset=0`, { headers: { "Authorization": `Bearer ${currentJwt}` } });
-        const data = await res.json(); const list = data.results || [];
+        const res = await fetch(`/api/open`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, domain })
+        });
+        const data = await res.json();
+        const list = data.results || [];
+
         document.getElementById("mail-count").textContent = list.length;
         document.getElementById("last-sync").textContent = "上次刷新 " + new Date().toLocaleTimeString();
         const box = document.getElementById("mail-list");
