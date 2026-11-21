@@ -122,7 +122,7 @@
       document.getElementById("active-email").textContent = currentAddress;
       localStorage.setItem("tm_prefix", name); localStorage.setItem("tm_domain", domain);
       try {
-        const res = await fetch(`/api/new_address`, {
+        const res = await fetch(`/api/open`, {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, domain })
         });
         const text = await res.text();
