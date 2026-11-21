@@ -167,13 +167,28 @@
           if (manual) showToast("已刷新，暂无新邮件"); return;
         }
         box.innerHTML = list.map(item => {
-          const raw = item.raw || ""; const subjM = raw.match(/^Subject:\s*(.+)$/im); const fromM = raw.match(/^From:\s*(.+)$/im);
-          const subject = item.subject || (subjM ? subjM[1].trim() : "(无主题)");
+          const raw = item.raw || "";
+          const subjM = raw.match(/^Subject:\s*(.+)$/im);
+          const fromM = raw.match(/^From:\s*(.+)$/im);
+          let subject = item.subject || (subjM ? subjM[1].trim() : "(无主题)");
+          if (/=\?UTF-8\?B\?/i.test(subject)) {
+            try { subject = decodeURIComponent(escape(atob(subject.replace(/.*=\?UTF-8\?B\?([^?]+)\?=.*/i, "$1")))); } catch (_) {}
+          }
           const sender = item.source || (fromM ? fromM[1].trim() : "未知发件人");
-          const body = item.text || item.html || raw.split(/\r?\n\r?\n/).slice(1).join("\n");
-          const code = extractCode(subject + " " + body);
-          return `<div class="mail-item"><div class="mail-subject">${escapeHtml(subject)}</div><div class="mail-meta">发件人：${escapeHtml(sender)}</div>${code ? `<div class="code-box" onclick="copyText('${code}','验证码 ${code} 已复制')">验证码：${code}（点击复制）</div>` : ""}<div class="mail-body">${item.html ? item.html : escapeHtml(body).replace(/\n/g,"<br>")}</div></div>`;
+          let body = item.text || item.html || "";
+          if (!body && raw) {
+            const b64M = raw.match(/Content-Transfer-Encoding:\s*base64[\r\n]+([A-Za-z0-9+/=\r\n]+)/i);
+            if (b64M) {
+              try { body = decodeURIComponent(escape(atob(b64M[1].replace(/\s+/g, "")))); } catch (_) { body = raw; }
+            } else {
+              body = raw.split(/\r?\n\r?\n/).slice(1).join("\n");
+            }
+          }
+          const cleanText = body.replace(/<[^>]+>/g, " ");
+          const code = extractCode(subject + " " + cleanText);
+          return `<div class="mail-item"><div class="mail-subject">${escapeHtml(subject)}</div><div class="mail-meta">发件人：${escapeHtml(sender)}</div>${code ? `<div class="code-box" onclick="copyText('${code}','验证码 ${code} 已复制')">验证码：${code}（点击复制）</div>` : ""}<div class="mail-body">${/<[a-z][\s\S]*>/i.test(body) ? body : escapeHtml(body).replace(/\n/g,"<br>")}</div></div>`;
         }).join("");
+
         if (manual) showToast("刷新成功，共 " + list.length + " 封邮件");
       } catch (e) { if (manual) showToast("刷新失败"); }
     }
